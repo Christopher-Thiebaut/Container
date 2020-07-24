@@ -1,15 +1,50 @@
 import XCTest
-@testable import Container
+import Container
 
 final class ContainerTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(Container().text, "Hello, World!")
+    var subject: Container!
+    
+    override func setUpWithError() throws {
+        subject = Container()
     }
+    func testResolve() throws {
+        subject.bind { 15 }
+        XCTAssertEqual(15, try subject.resolve())
+    }
+    
+    func testFill() {
+        subject.bind { "Hello, World" }
+        
+        let greeter = Greeter()
+        subject.fill(greeter)
+        
+        XCTAssertEqual(greeter.greet(), "Hello, World")
+    }
+    
+    func testFillRecursive() {
+        class Store {
+            var greeter = Greeter()
+        }
+        
+        subject.bind { "Hello, Containers!" }
+        
+        let store = Store()
+        subject.fill(store)
+        XCTAssertEqual(store.greeter.greet(), "Hello, Containers!")
+    }
+    
+    
 
     static var allTests = [
-        ("testExample", testExample),
+        ("testResolve", testResolve),
+        ("testBuild", testFill)
     ]
+}
+
+class Greeter {
+    @Containerized var greeting: String
+    
+    func greet() -> String {
+        return greeting
+    }
 }
