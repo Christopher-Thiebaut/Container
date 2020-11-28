@@ -46,13 +46,16 @@ public class Container {
     
     /// Call `fill` to associate an instance of `Container` with an already created object and its descandants in the object tree.  Any properties of the object that are marked as `@Containerized` will be resolved from this container
     ///
+    ///
     /// NOTE: Properties marked as `lazy` and their descendants will not be associated with the container.  To get around this issue, keep your non-containerized properties lightweight and allow them to be constructed eagerly.  `@Containerized` properties will be initialized lazily.
     /// - Parameter object: The root of the object tree to be associated with the container
-    public func fill<T>(_ object: T) {
+    public func fill<T>(_ object: T, filledObjects: [AnyObject] = []) {
         let mirror = Mirror(reflecting: object)
         for child in mirror.children {
             guard let containing = child.value as? ContainerHolder else {
-                fill(child.value)
+                let reference = child.value as AnyObject
+                guard !filledObjects.contains(where: { $0 === reference} ) else { continue }
+                fill(child.value, filledObjects: filledObjects + [reference])
                 continue
             }
             containing.container.value = self

@@ -33,6 +33,35 @@ final class ContainerTests: XCTestCase {
         XCTAssertEqual(store.greeter.greet(), "Hello, Containers!")
     }
     
+    func testRecursiveDeathSpiral() throws {
+        //Note: This is an intentional reference cycle to test the container's handling of reference cycles. (Some reactive libraries have intentional reference cycles)
+        class HostileRecursiveExample {
+            let greeting = "Hello, World"
+            var child: ParentReferentialThing?
+            
+            class ParentReferentialThing {
+                var parent: HostileRecursiveExample
+                
+                init(parent: HostileRecursiveExample) {
+                    self.parent = parent
+                }
+            }
+            
+            init() {
+                child = ParentReferentialThing(parent: self)
+            }
+        }
+        
+        class Greeter {
+            @Containerized var message: HostileRecursiveExample
+        }
+        
+        subject.bind { HostileRecursiveExample() }
+        subject.bind { Greeter() }
+        
+        let greeter: Greeter = try subject.resolve()
+        XCTAssertEqual(greeter.message.greeting, "Hello, World")
+    }
     
 
     static var allTests = [
